@@ -1,5 +1,6 @@
 <?php
 
+
 /**
  * -------------------------------------------------------------------------
  * myplugin plugin for GLPI
@@ -30,7 +31,14 @@
  * @link      https://github.com/pluginsGLPI/myplugin
  * -------------------------------------------------------------------------
  */
-define('PLUGIN_MYPLUGIN_VERSION', '0.0.1');
+
+use GlpiPlugin\Myplugin\Superasset;
+use GlpiPlugin\Myplugin\Superasset_Item;
+use GlpiPlugin\Myplugin\Config;
+use GlpiPlugin\Myplugin\Profile as Myplugin_profile;
+use Glpi\Plugin\Hooks;
+
+define('PLUGIN_MYPLUGIN_VERSION', '0.0.2');
 
 // Minimal GLPI version, inclusive
 define("PLUGIN_MYPLUGIN_MIN_GLPI_VERSION", "10.0.0");
@@ -48,6 +56,39 @@ function plugin_init_myplugin(): void
     global $PLUGIN_HOOKS;
 
     $PLUGIN_HOOKS['csrf_compliant']['myplugin'] = true;
+
+    //add menu hook
+    $PLUGIN_HOOKS[Hooks::MENU_TOADD]['myplugin'] = [
+        //insert into 'plugin menu'
+        'plugins' => Superasset::class,
+    ];
+
+    $PLUGIN_HOOKS[Hooks::ITEM_DELETE]['myplugin'] = [
+        'Computer' => 'myplugin_computer_delete'
+    ];
+
+    $PLUGIN_HOOKS[Hooks::PRE_ITEM_FORM]['myplugin'] = [
+        Superasset::class, 'preItemForm'
+    ];
+
+    //to use a js script for a specific page
+    if (strpos($_SERVER['REQUEST_URI'], "ticket.form.php") !== false
+        && isset($_GET['id'])) {
+        $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['myplugin'][] = 'js/ticket.js.php';
+    }
+    //to use a js script for a specific page
+
+    Plugin::registerClass(Superasset_Item::class, [
+        "addtabon" => Computer::class
+    ]);
+
+    Plugin::registerClass(Config::class, [
+        "addtabon" => \Config::class
+    ]);
+
+    Plugin::registerClass(MyPlugin_Profile::class, [
+        'addtabon' => Profile::class
+    ]);
 }
 
 /**
@@ -74,7 +115,7 @@ function plugin_version_myplugin(): array
         'name'           => 'myplugin',
         'version'        => PLUGIN_MYPLUGIN_VERSION,
         'author'         => '<a href="http://www.teclib.com">Teclib\'</a>',
-        'license'        => 'MIT',
+        'license'        => 'none',
         'homepage'       => '',
         'requirements'   => [
             'glpi' => [
@@ -107,7 +148,8 @@ function plugin_myplugin_check_config(bool $verbose = false): bool
         return true;
 
     if($verbose)
-        __('Installed / not configured'); 
+        __('Installed / not configured');
 
-    return false; 
+    return false;
 }
+
