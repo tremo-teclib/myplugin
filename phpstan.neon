@@ -1,16 +1,19 @@
-includes:
-    - ../../vendor/phpstan/phpstan-deprecation-rules/rules.neon
-
 parameters:
-    level: max
+    parallel:
+        maximumNumberOfProcesses: 2
+    level: 5
+    bootstrapFiles:
+        - ../../inc/based_config.php
     paths:
-        - src
+        - inc
+        - front
+        - ajax
         - hook.php
         - setup.php
     scanDirectories:
+        - ../../inc
         - ../../src
-    bootstrapFiles:
-        - ../../inc/based_config.php
     stubFiles:
         - ../../stubs/glpi_constants.php
-    treatPhpDocTypesAsCertain: false
+rules:
+    - GlpiProject\Tools\PHPStan\Rules\GlobalVarTypeRule
