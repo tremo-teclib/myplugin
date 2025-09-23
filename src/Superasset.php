@@ -10,10 +10,16 @@ use Notepad;
 use Log;
 use Exception;
 use Computer;
+use MassiveAction;
+use Html;
+use PhpCsFixer\ToolInfo;
+use Toolbox;
 
 class Superasset extends CommonDBTM{
 
-    static $rightname = 'computer';
+    const newRightNumber = 5000;
+
+    static $rightname = 'myplugin::superasset';
     public $dohistory = true;
 
     static function getTypeName($nb = 0){
@@ -69,6 +75,70 @@ class Superasset extends CommonDBTM{
         return $menu;
     }
 
+    function getSpecificMassiveActions($checkitem = NULL)
+    {
+        $actions = parent::getSpecificMassiveActions($checkitem);
+
+        // add a single massive action
+        $class        = __CLASS__;
+        $action_key   = "superasset_new_massive_action";
+        $action_label = "My new massive action";
+        $actions[$class . MassiveAction::CLASS_ACTION_SEPARATOR . $action_key] = $action_label;
+
+        return $actions;
+    }
+
+    static function showMassiveActionsSubForm(MassiveAction $ma)
+    {
+        switch ($ma->getAction()) {
+            case 'superasset_new_massive_action':
+                Computer::dropdown();
+                break;
+            case 'computer_new_massive_action' :
+                Superasset::dropdown();
+                break;
+        }
+        return parent::showMassiveActionsSubForm($ma);
+    }
+
+    static function processMassiveActionsForOneItemtype(
+        MassiveAction $ma, CommonDBTM $item, array $ids
+    ) {
+        switch ($ma->getAction()) {
+
+            case 'superasset_new_massive_action':
+                $computer_id = $ma->getInput()['computers_id'];
+                foreach ($ids as $superasset_id) {
+                    self::addSuperassetItem($superasset_id, $computer_id);
+                }
+                return;
+
+            case 'computer_new_massive_action':
+                $superasset_id = $ma->getInput()['plugin_myplugin_superassets_id'];
+                foreach($ids as $computer_id)
+                    self::addSuperassetItem($superasset_id, $computer_id);
+                return;
+        }
+        return parent::processMassiveActionsForOneItemtype($ma, $item, $ids);
+    }
+
+    private static function addSuperassetItem(int $superasset_id, int $computer_id){
+        $superasset_item = new Superasset_Item();
+        $superasset_item->add([
+            "plugin_myplugin_superassets_id" => $superasset_id,
+            "itemtype" => 'Computer',
+            "items_id" => $computer_id
+        ]);
+    }
+
+    //ading a possible right for this object
+    function getRights($interface = 'central')
+    {
+        $rights = parent::getRights();
+        $rights[self::newRightNumber] = __('new right');
+        return $rights;
+    }
+    //ading a possible right for this object
 
     function defineTabs($options = []){
         $tabs = [];
@@ -78,7 +148,6 @@ class Superasset extends CommonDBTM{
               ->addStandardTab(Superasset_Item::class, $tabs, $options);
         return $tabs;
     }
-
 
     function rawSearchOptions()
     {
@@ -145,6 +214,22 @@ class Superasset extends CommonDBTM{
     function post_deleteFromDB()
     {
         $this->post_deleteItem();
+    }
+
+
+    static function cronInfo($name)
+    {
+        switch ($name) {
+            case 'myaction':
+                return ['description' => __('action desc', 'myplugin')];
+        }
+        return [];
+    }
+
+    static function cronMyaction($task = NULL)
+    {
+        Toolbox::logInfo("myaction est exécuté");
+        return true;
     }
 
     function preItemForm($params){

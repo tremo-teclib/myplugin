@@ -11,6 +11,8 @@ use Session;
 
 class Superasset_Item extends CommonDBTM{
 
+    public static $rightname = "myplugin::superasset_item";
+
     static function getTypeName($nb = 0){
         return _n('super-asset-item', 'super-asset-items', $nb);
     }

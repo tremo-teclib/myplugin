@@ -37,6 +37,7 @@ use GlpiPlugin\Myplugin\Superasset_Item;
 use GlpiPlugin\Myplugin\Config;
 use GlpiPlugin\Myplugin\Profile as Myplugin_profile;
 use Glpi\Plugin\Hooks;
+use GlpiPlugin\Myplugin\Dashboard;
 
 define('PLUGIN_MYPLUGIN_VERSION', '0.0.2');
 
@@ -71,6 +72,18 @@ function plugin_init_myplugin(): void
         Superasset::class, 'preItemForm'
     ];
 
+    $PLUGIN_HOOKS[Hooks::USE_MASSIVE_ACTION]['myplugin'] = true;
+
+    // add new widgets to the dashboard
+    $PLUGIN_HOOKS[Hooks::DASHBOARD_TYPES]['myplugin'] = [
+        Dashboard::class => 'getTypes',
+    ];
+
+    // add new cards to the dashboard
+    $PLUGIN_HOOKS[Hooks::DASHBOARD_CARDS]['myplugin'] = [
+        Dashboard::class => 'getCards',
+    ];
+
     //to use a js script for a specific page
     if (strpos($_SERVER['REQUEST_URI'], "ticket.form.php") !== false
         && isset($_GET['id'])) {
@@ -88,6 +101,10 @@ function plugin_init_myplugin(): void
 
     Plugin::registerClass(MyPlugin_Profile::class, [
         'addtabon' => Profile::class
+    ]);
+
+    Plugin::registerClass(Superasset::class, [
+        'notificationtemplates_types' => true
     ]);
 }
 

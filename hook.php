@@ -31,14 +31,9 @@
  * -------------------------------------------------------------------------
  */
 
-use DBConnection;
 use GlpiPlugin\Myplugin\Superasset;
 use GlpiPlugin\Myplugin\Superasset_Item;
-use Migration;
-use ProfileRight;
-use Config;
 use GlpiPlugin\Myplugin\Profile as Myplugin_profile;
-
 
 /**
  * Plugin install process
@@ -48,11 +43,11 @@ function plugin_myplugin_install(): bool
     // Creating the table of the Superasset itemtype
     global $DB;
 
-    $default_charset = DBConnection::getDefaultCharset();
-    $default_collation = DBConnection::getDefaultCollation();
+    $default_charset = \DBConnection::getDefaultCharset();
+    $default_collation = \DBConnection::getDefaultCollation();
 
     // instantiate migration with version
-    $migration = new Migration(PLUGIN_MYPLUGIN_VERSION);
+    $migration = new \Migration(PLUGIN_MYPLUGIN_VERSION);
 
     //create table if not exists
     $table = Superasset::getTable();
@@ -96,18 +91,39 @@ function plugin_myplugin_install(): bool
     //adding display preferences
 
     //adding the plugin configuration fields and values
-    Config::setConfigurationValues('plugin:myplugin', [
+    \Config::setConfigurationValues('plugin:myplugin', [
         'myplugin_computer_tab' => 1,
         'myplugin_computer_form' => 1
     ]);
     //adding the plugin configuration fields and values
 
-    // add rights to current profile
-    foreach (MyPlugin_Profile::getAllRights() as $right) {
-        ProfileRight::addProfileRights([$right['field']]);
+    //adding myplugin rights
+    $rights = Myplugin_profile::getAllRights();
+    $rightsNames = [Myplugin_profile::$rightname];
+    foreach($rights as $right){
+        $rightsNames[] = $right['field'];
     }
-    // add rights to current profile
+    \ProfileRight::addProfileRights($rightsNames);
+    //adding myplugin rights
 
+    //giving the right to modify the myplugin
+    // rights to profiles who can view the profile menu (AKA super-admin)
+    $migration->giveRight(Myplugin_profile::$rightname, 2, [
+        'profile' => 23
+    ]);
+
+
+    //registering the automatic action
+    CronTask::register(
+        Superasset::class,
+        'myaction',
+        300,
+        [
+            'comment'   => 'comment of the automatic action',
+            'mode'      => \CronTask::MODE_EXTERNAL
+        ]
+    );
+    //registering the automatic action
 
     $migration->executeMigration();
 
@@ -141,17 +157,34 @@ function plugin_myplugin_uninstall(): bool
     //deleting display preferences
 
     //removing the plugin config fields and values
-    $config = new Config();
+    $config = new \Config();
     $config->deleteByCriteria(['context' => 'plugin:myplugin']);
     //removing the plugin config fields and values
 
-    // delete rights for current profile
-    foreach (MyPlugin_Profile::getAllRights() as $right) {
-        ProfileRight::deleteProfileRights([$right['field']]);
+    //removing myplugin rights
+    $rights = Myplugin_profile::getAllRights();
+    $rightsNames = [Myplugin_profile::$rightname];
+    foreach($rights as $right){
+        $rightsNames[] = $right['field'];
     }
-    // delete rights for current profile
+    \ProfileRight::deleteProfileRights($rightsNames);
+    //removing myplugin rights
 
     return true;
+}
+
+function plugin_myplugin_MassiveActions($type)
+{
+   $actions = [];
+   switch ($type) {
+      case Computer::class:
+         $class = Superasset::class;
+         $key   = 'computer_new_massive_action';
+         $label = __("computer new massive action", 'example');
+         $actions[$class. MassiveAction::CLASS_ACTION_SEPARATOR. $key] = $label;
+         break;
+    }
+   return $actions;
 }
 
 function myplugin_computer_delete(Computer $item){

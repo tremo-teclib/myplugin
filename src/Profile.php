@@ -11,10 +11,10 @@ use Glpi\Application\View\TemplateRenderer;
 
 
 class Profile extends CommonDBTM{
-    public static $rightname = 'profile';
+    public static $rightname = 'myplugin::profile';
 
     static function getTypeName($nb = 0){
-        return __("My plugin", "myplugin");
+        return __("My plugin profile", "myplugin");
     }
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0){
@@ -44,7 +44,12 @@ class Profile extends CommonDBTM{
             [
                 'itemtype' => Superasset::class,
                 'label'    => Superasset::getTypeName(),
-                'field'    => 'myplugin::superasset'
+                'field'    => Superasset::$rightname
+            ],
+            [
+                'itemtype' => Superasset_Item::class,
+                'label'    => Superasset_Item::getTypeName(),
+                'field'    => Superasset_Item::$rightname
             ]
         ];
         return $rights;
@@ -60,7 +65,7 @@ class Profile extends CommonDBTM{
         ];
 
         TemplateRenderer::getInstance()->display('@myplugin/profile.html.twig', [
-            'can_edit' => self::canUpdate(),
+            'canedit' => $matrix_options['canedit'],
             'profile'  => $profile,
             'rights'   => self::getAllRights(),
             'matrix_options' => $matrix_options

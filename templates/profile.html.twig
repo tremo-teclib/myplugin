@@ -9,7 +9,7 @@
 
         {{ profile.displayRightsChoiceMatrix(rights, matrix_options) }}
 
-        {% if can_edit %}
+        {% if canedit %}
             <button type="submit" class="btn btn-primary mx-1" name="update" value="1">
                 <i class="ti ti-device-floppy"></i>
                 <span>{{ _x('button', 'Save') }}</span>
