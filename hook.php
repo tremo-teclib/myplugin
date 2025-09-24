@@ -106,12 +106,15 @@ function plugin_myplugin_install(): bool
     \ProfileRight::addProfileRights($rightsNames);
     //adding myplugin rights
 
-    //giving the right to modify the myplugin
-    // rights to profiles who can view the profile menu (AKA super-admin)
-    $migration->giveRight(Myplugin_profile::$rightname, 2, [
-        'profile' => 23
-    ]);
-
+    //giving the right to modify rights for Superasset and Superasset_item types
+    // giving the right to every profile
+    $DB->update(
+        ProfileRight::getTable(),
+        ['rights' => UPDATE],
+        [
+            'WHERE' => ['name' => Myplugin_profile::$rightname]
+        ]
+    );
 
     //registering the automatic action
     CronTask::register(
@@ -152,8 +155,9 @@ function plugin_myplugin_uninstall(): bool
 
     //deleting display preferences
     $table = DisplayPreference::getTable();
-    $query = "Delete from `$table` where itemtype = 'Superasset'";
-    $DB->doQuery($query);
+    $DB->delete($table, [
+        'itemtype' => 'Superasset'
+    ]);
     //deleting display preferences
 
     //removing the plugin config fields and values
