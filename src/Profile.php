@@ -61,7 +61,7 @@ class Profile extends CommonDBTM{
         $profile->getFromDB($profile_id);
 
         $matrix_options = [
-            "canedit" => self::canUpdate()
+            "canedit" => $profile->canUpdate()
         ];
 
         TemplateRenderer::getInstance()->display('@myplugin/profile.html.twig', [
